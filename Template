@@ -1,0 +1,69 @@
+Vagrant.configure("2") do |config|
+    config.vm.box = "ubuntu/xenial64"
+    config.vm.define "testing" do |testing|
+        config.vm.hostname = "testing"
+        config.vm.network "forwarded_port", guest: 80, host: 9999, id: 'Apache'
+        config.vm.network :public_network, :bridge => 'Realtek PCIe GbE Family Controller',:use_dhcp_assigned_default_route => true
+
+        config.vm.synced_folder ".", "/opt/"
+    end
+
+    config.vm.provider "virtualbox" do |vb|
+        vb.memory = "2048"
+    end
+
+    config.vm.provision "shell", inline: <<-SHELL
+
+      sudo apt-get update && sudo apt-get upgrade -yq 
+      sudo apt-get install unattended-upgrades apt-transport-https ca-certificates ansible ufw vim python3-pip python-pip git curl wget apache2 -yq
+      sudo apt remove netcat-openbsd -y
+
+      echo "
+      kernel.kptr_restrict = 2
+      kernel.randomize_va_space = 2
+      net.ipv4.icmp_echo_ignore_broadcasts = 1
+      net.ipv4.icmp_ignore_bogus_error_responses = 1
+      
+      net.ipv4.tcp_syncookies = 1
+      net.ivp4.tcp_fin_timeout = 30
+      net.ipv4.tcp_rfc1337 = 1
+      
+      net.ipv4.tcp_timestamps = 0
+      net.ipv4.conf.all.accept_redirects = 0
+      net.ipv4.conf.all.rp_filter = 1
+      
+      net.ipv4.conf.all.log_martians = 1
+      net.ipv4.conf.default.accept_redirects = 0
+      net.ipv4.conf.default.rp_filter = 1
+      
+      net.ipv4.conf.default.log_martians = 1
+      net.ipv6.conf.all.accept_ra = 0
+      
+      net.ipv4.conf.all.accept_redirects = 0
+      net.ipv4.conf.all.rp_filter = 1
+      net.ipv4.conf.all.log_martians = 1
+      net.ipv4.conf.default.accept_redirects = 0
+      net.ipv4.conf.default.rp_filter = 1
+      net.ipv4.conf.default.log_martians = 1
+      
+      # IPV6
+      
+      net.ipv6.conf.all.accept_ipv6 = 0
+      net.ipv6.conf.default.accept_ipv6 = 0" >> sysctl.conf
+
+      sudo cp /etc/sysctl.conf /etc/sysctl.conf.old
+      sudo rm /etc/sysctl.conf && sudo mv sysctl.conf /etc/ && sudo chmod 644 /etc/sysctl.conf && \
+      sudo chown root:root /etc/sysctl.conf
+
+      #sudo systemctl enable apache2.service
+      sudo systemctl start apache2.service
+
+      sudo ufw --force enable 
+      sudo ufw allow 22/tcp
+      sudo ufw allow 53/udp 
+      sudo ufw allow 80/tcp
+      sudo ufw allow 443/tcp
+    
+
+    SHELL
+end

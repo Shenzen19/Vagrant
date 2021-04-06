@@ -1,0 +1,36 @@
+Vagrant.configure("2") do |cfg|
+	cfg.vm.box = "ubuntu/focal64"
+	cfg.vm.define "lb" do |lb|
+		cfg.vm.hostname = "lb"
+		cfg.vm.network "forwarded_port", guest: 8080, host: 20000, id: 'nginx'
+		cfg.vm.network :public_network, :bridge => 'Realtek PCIe GbE Family Controller',:use_dhcp_assigned_default_route => true
+
+		  cfg.vm.synced_folder "synchro/", "/opt/"
+	end
+
+	cfg.vm.provider "virtualbox" do |vb|
+		vb.name = "lb"
+		vb.memory = 2048
+		vb.cpus = 2
+	end
+
+	cfg.vm.provision "shell", inline: <<-SHELL
+
+		sudo apt-get update
+		sudo apt-get install apt-transport-https ca-certificates curl gnupg lsb-release -yq
+
+		echo \
+  "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \
+  $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+  		curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+
+  		 sudo apt-get update
+  		 sudo apt-get install docker-ce docker-ce-cli containerd.io docker-compose -y
+
+		cd /opt/
+		sudo apt install
+		sudo docker-compose up
+	SHELL
+
+end 

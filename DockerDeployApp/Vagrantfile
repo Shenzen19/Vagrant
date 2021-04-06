@@ -33,8 +33,14 @@ Vagrant.configure("2") do |cfg|
 
   		sudo apt-get update
   		sudo apt-get install docker-ce docker-ce-cli containerd.io -yq
-
-		sudo docker swarm init --advertise-addr {YOURADDRESS} 
+		sudo touch /etc/docker/daemon.json && \
+		echo " 
+			{
+        			"metrics-addr" : "127.0.0.1:9323",
+        			"experimental" : true
+			}
+		"
+		sudo docker swarm init --advertise-addr {YOURADDRESS} # for monitor Docker within Prometheus see : https://docs.docker.com/config/daemon/prometheus/
 
   		cd /opt/ && chmod +x launcher.sh && sudo sh launcher.sh
 	SHELL

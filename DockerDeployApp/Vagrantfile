@@ -1,0 +1,42 @@
+Vagrant.configure("2") do |cfg|
+	cfg.vm.box = "ubuntu/focal64"
+	cfg.vm.define "{NAME)" do |{NAME}|
+		cfg.vm.hostname = " "
+		cfg.vm.network "forwarded_port", guest: {PORT}, host: {PORT}, id: '{APP}'
+		cfg.vm.network "forwarded_port", guest: {PORT}, host: {PORT}, id: '{APP}'
+		cfg.vm.network "forwarded_port", guest: {PORT}, host: {PORT}, id: '{APP}'
+		cfg.vm.network "forwarded_port", guest: {PORT}, host: {PORT}, id: '{APP}'
+		cfg.vm.network :public_network, :bridge => '{YOUR_NETWORK_CARD}',:use_dhcp_assigned_default_route => true
+
+		  cfg.vm.synced_folder ".", "{SHAREDDIR_INSIDEVM}"
+	end
+
+	cfg.vm.provider "virtualbox" do |vb|
+		vb.name = " "
+		vb.memory = 2048
+		vb.cpus = 2
+	end
+
+	cfg.vm.provision "shell", inline: <<-SHELL
+		sudo apt update 
+		sudo apt-get install \
+    	apt-transport-https \
+    	ca-certificates \
+    	curl \
+    	gnupg \
+    	lsb-release -yq
+
+    	curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+    	echo \
+  		"deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \
+  		$(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+  		sudo apt-get update
+  		sudo apt-get install docker-ce docker-ce-cli containerd.io -yq
+
+		sudo docker swarm init --advertise-addr {YOURADDRESS} 
+
+  		cd /opt/ && chmod +x launcher.sh && sudo sh launcher.sh
+	SHELL
+
+end 

@@ -1,0 +1,34 @@
+Vagrant.configure("2") do |configure|
+    configure.vm.box = "ubuntu/focal64"
+    configure.vm.define "cargo" do |cargo|
+        configure.vm.hostname = "cargo"
+        configure.vm.synced_folder "captain/" , "/opt/"
+    end
+
+    configure.vm.provider "virtualbox" do |virtualbox|
+        virtualbox.name = "{VM_NAME}"
+        virtualbox.memory = {MEMORY}
+        virtualbox.cpus = {CPU}
+    end
+
+    configure.vm.provision "shell", inline: <<-SHELL
+    sudo apt-get update
+	sudo apt-get install apt-transport-https ca-certificates curl gnupg lsb-release -yq
+
+		echo \
+  "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \
+  $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+  	curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+
+  	sudo apt-get update
+  	sudo apt-get install docker-ce docker-ce-cli containerd.io docker-compose -y
+
+
+    	cd /opt/
+    	sudo docker-compose up -d
+    	sudo docker-compose exec bash master # to enter ansible master container
+    
+
+    SHELL
+end 
